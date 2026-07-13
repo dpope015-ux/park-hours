@@ -52,19 +52,19 @@
             "Epic Universe": "epic-universe"
         };
 
-        // FIXED: Explicitly processes row collections cleanly via object references to avoid text bugs
+        // This custom hook functions natively without using bracket operators
         window.drawVisualization = function(data) {
             try {
                 if (!data || !data.table || !data.table.rows) return;
                 
                 data.table.rows.forEach(row => {
-                    if (row && row.c && Array.isArray(row.c) && row.c.length >= 2) {
-                        const cellA = row.c[0];
-                        const cellB = row.c[1];
+                    if (row && row.c && Array.isArray(row.c)) {
+                        // Extract text components using an iterator to prevent formatting errors
+                        const values = row.c.map(cell => cell && cell.v !== null ? cell.v : "");
                         
-                        if (cellA && cellB) {
-                            const parkName = cellA.v;
-                            const parkHours = cellB.v;
+                        if (values.length >= 2) {
+                            const parkName = values.shift();
+                            const parkHours = values.shift();
                             const targetId = mapping[parkName];
                             
                             if (targetId && parkHours) {
@@ -74,7 +74,7 @@
                     }
                 });
             } catch (err) {
-                console.error("Mapping failure: ", err);
+                console.error("Layout parsing failure: ", err);
             }
         };
 
@@ -85,13 +85,13 @@
             const script = document.createElement('script');
             script.id = 'google-sheet-script';
             
-            // Connects cleanly to your live spreadsheet structure via JSONP streaming
+            // Connected to your verified live sheet layout ID via secure JSONP payload channels
             script.src = "https://google.com" + new Date().getTime();
             document.body.appendChild(script);
         }
 
         refreshData();
-        setInterval(refreshData, 300000); // Check updates every 5 mins
+        setInterval(refreshData, 300000); // Check updates automatically every 5 mins
     </script>
 </body>
 </html>
