@@ -33,42 +33,35 @@
     </style>
 </head>
 <body>
-    <div id="magic-kingdom" class="hours-box">Loading...</div>
-    <div id="epcot" class="hours-box">Loading...</div>
-    <div id="hollywood" class="hours-box">Loading...</div>
-    <div id="animal-kingdom" class="hours-box">Loading...</div>
-    <div id="universal-studios" class="hours-box">Loading...</div>
-    <div id="islands-adventure" class="hours-box">Loading...</div>
-    <div id="epic-universe" class="hours-box">Loading...</div>
+    <div id="magic-kingdom" class="hours-box">Loading Hours...</div>
+    <div id="epcot" class="hours-box">Loading Hours...</div>
+    <div id="hollywood" class="hours-box">Loading Hours...</div>
+    <div id="animal-kingdom" class="hours-box">Loading Hours...</div>
+    <div id="universal-studios" class="hours-box">Loading Hours...</div>
+    <div id="islands-adventure" class="hours-box">Loading Hours...</div>
+    <div id="epic-universe" class="hours-box">Loading Hours...</div>
 
     <script>
-        const sheetCSVUrl = "https://google.com";
+        // Mapping catalog to route layout data strings to their HTML screen targets
+        const mapping = {
+            "Magic Kingdom": "magic-kingdom",
+            "Epcot": "epcot",
+            "Hollywood Studios": "hollywood",
+            "Animal Kingdom": "animal-kingdom",
+            "Universal Studios Florida": "universal-studios",
+            "Islands of Adventure": "islands-adventure",
+            "Epic Universe": "epic-universe"
+        };
 
-        async function fetchHours() {
+        // FIXED: This global function catches data from Google's JSONP wrapper script, avoiding CORS errors
+        window.drawVisualization = function(data) {
             try {
-                // Direct fetch with no proxies needed now that Share settings are open
-                const response = await fetch(sheetCSVUrl);
-                if (!response.ok) throw new Error("Could not pull spreadsheet details.");
+                if (!data || !data.table || !data.table.rows) return;
                 
-                const csvText = await response.text();
-                const lines = csvText.split(/\r?\n/);
-                
-                const mapping = {
-                    "Magic Kingdom": "magic-kingdom",
-                    "Epcot": "epcot",
-                    "Hollywood Studios": "hollywood",
-                    "Animal Kingdom": "animal-kingdom",
-                    "Universal Studios Florida": "universal-studios",
-                    "Islands of Adventure": "islands-adventure",
-                    "Epic Universe": "epic-universe"
-                };
-
-                lines.forEach(line => {
-                    const columns = line.split(",").map(c => c.replace(/"/g, '').trim());
-                    
-                    if (columns.length >= 2) {
-                        const parkName = columns[0];  // Column A
-                        const parkHours = columns[1]; // Column B
+                data.table.rows.forEach(row => {
+                    if (row && row.c && row.c[0] && row.c[1]) {
+                        const parkName = row.c[0].v;
+                        const parkHours = row.c[1].v;
                         const targetId = mapping[parkName];
                         
                         if (targetId && parkHours) {
@@ -76,18 +69,27 @@
                         }
                     }
                 });
-                
-            } catch (error) {
-                console.error("Data error:", error);
-                const boxes = document.getElementsByClassName("hours-box");
-                for (let box of boxes) {
-                    box.innerText = "Connection Error";
-                }
+            } catch (err) {
+                console.error("Parsing error: ", err);
             }
+        };
+
+        function refreshData() {
+            // Remove old script tag if it exists to clean up memory
+            const oldScript = document.getElementById('google-sheet-script');
+            if (oldScript) oldScript.remove();
+
+            // FIXED: Appending a JSONP script request node bypasses CORS restrictions entirely
+            const script = document.createElement('script');
+            script.id = 'google-sheet-script';
+            script.src = "https://google.com" + new Date().getTime();
+            document.body.appendChild(script);
         }
 
-        fetchHours();
-        setInterval(fetchHours, 600000); // Check updates every 10 mins
+        // Initialize script download immediately
+        refreshData();
+        // Check for calendar cell modifications every 10 minutes
+        setInterval(refreshData, 600000);
     </script>
 </body>
 </html>
