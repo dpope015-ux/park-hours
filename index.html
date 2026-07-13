@@ -42,8 +42,7 @@
     <div id="epic-universe" class="hours-box">Loading...</div>
 
     <script>
-        // Your live public Google Sheet CSV link hardcoded directly
-        const rawSheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSswDsoar01OmnG6tTKYAcp_2kZiARfxotIAhY2cjJwaEUHmRBJeBkgtPYsWbFXpu45SWHIAi5I0C5Y/pub?output=csv";
+        const rawSheetUrl = "https://google.com";
         const sheetCSVUrl = "https://corsproxy.io?" + encodeURIComponent(rawSheetUrl);
 
         async function fetchHours() {
@@ -51,19 +50,33 @@
                 const response = await fetch(sheetCSVUrl);
                 const csvText = await response.text();
                 
-                // Split the rows out cleanly 
+                // Parses rows while safely clearing carriage return artifacts (\r)
                 const rows = csvText.split("\n").map(row => {
                     return row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(cell => cell.replace(/"/g, '').trim());
                 });
                 
-                // Target index positions matching your sheet's Column B values
-                if (rows[1]) document.getElementById("magic-kingdom").innerText = rows[1][1] || "Closed";
-                if (rows[2]) document.getElementById("epcot").innerText = rows[2][1] || "Closed";
-                if (rows[3]) document.getElementById("hollywood").innerText = rows[3][1] || "Closed";
-                if (rows[4]) document.getElementById("animal-kingdom").innerText = rows[4][1] || "Closed";
-                if (rows[5]) document.getElementById("universal-studios").innerText = rows[5][1] || "Closed";
-                if (rows[6]) document.getElementById("islands-adventure").innerText = rows[6][1] || "Closed";
-                if (rows[7]) document.getElementById("epic-universe").innerText = rows[7][1] || "Closed";
+                // Helper mapping database names to target DOM element IDs
+                const mapping = {
+                    "Magic Kingdom": "magic-kingdom",
+                    "Epcot": "epcot",
+                    "Hollywood Studios": "hollywood",
+                    "Animal Kingdom": "animal-kingdom",
+                    "Universal Studios Florida": "universal-studios",
+                    "Islands of Adventure": "islands-adventure",
+                    "Epic Universe": "epic-universe"
+                };
+
+                // Iterates through your rows and forces direct string printing of Column B
+                rows.forEach(row => {
+                    if (row.length >= 2) {
+                        const parkName = row[0];
+                        const parkHours = row[1];
+                        const elementId = mapping[parkName];
+                        if (elementId) {
+                            document.getElementById(elementId).innerText = parkHours || "Closed";
+                        }
+                    }
+                });
                 
             } catch (error) {
                 console.error("Error updating layout overlay:", error);
@@ -71,7 +84,7 @@
         }
 
         fetchHours();
-        setInterval(fetchHours, 600000); // Check updates every 10 mins
+        setInterval(fetchHours, 600000);
     </script>
 </body>
 </html>
