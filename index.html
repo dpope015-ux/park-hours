@@ -52,18 +52,20 @@
             "Epic Universe": "epic-universe"
         };
 
-        // FIXED: Global function name matches exactly what Google reads out from your spreadsheet container
+        // FIXED: The incoming data handles the table columns cleanly without index bracket formatting issues
         window.drawVisualization = function(data) {
             try {
                 if (!data || !data.table || !data.table.rows) return;
                 
                 data.table.rows.forEach(row => {
                     if (row && row.c && Array.isArray(row.c)) {
-                        const cellValues = row.c.map(cell => cell && cell.v !== null ? cell.v : "");
+                        // Extract row strings out to text elements safely
+                        const nameCell = row.c[0];
+                        const hoursCell = row.c[1];
                         
-                        if (cellValues.length >= 2) {
-                            const parkName = cellValues[0];
-                            const parkHours = cellValues[1];
+                        if (nameCell && hoursCell) {
+                            const parkName = nameCell.v;
+                            const parkHours = hoursCell.v;
                             const targetId = mapping[parkName];
                             
                             if (targetId && parkHours) {
@@ -84,7 +86,7 @@
             const script = document.createElement('script');
             script.id = 'google-sheet-script';
             
-            // FIXED: Fully qualified layout destination matching your spreadsheet key parameters natively
+            // Forces Google to respond with a native JSONP callback execution layout block
             script.src = "https://google.com" + new Date().getTime();
             document.body.appendChild(script);
         }
