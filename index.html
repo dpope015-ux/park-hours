@@ -33,16 +33,15 @@
     </style>
 </head>
 <body>
-    <div id="magic-kingdom" class="hours-box">Loading Hours...</div>
-    <div id="epcot" class="hours-box">Loading Hours...</div>
-    <div id="hollywood" class="hours-box">Loading Hours...</div>
-    <div id="animal-kingdom" class="hours-box">Loading Hours...</div>
-    <div id="universal-studios" class="hours-box">Loading Hours...</div>
-    <div id="islands-adventure" class="hours-box">Loading Hours...</div>
-    <div id="epic-universe" class="hours-box">Loading Hours...</div>
+    <div id="magic-kingdom" class="hours-box">Loading...</div>
+    <div id="epcot" class="hours-box">Loading...</div>
+    <div id="hollywood" class="hours-box">Loading...</div>
+    <div id="animal-kingdom" class="hours-box">Loading...</div>
+    <div id="universal-studios" class="hours-box">Loading...</div>
+    <div id="islands-adventure" class="hours-box">Loading...</div>
+    <div id="epic-universe" class="hours-box">Loading...</div>
 
     <script>
-        // Mapping catalog to route layout data strings to their HTML screen targets
         const mapping = {
             "Magic Kingdom": "magic-kingdom",
             "Epcot": "epcot",
@@ -53,43 +52,45 @@
             "Epic Universe": "epic-universe"
         };
 
-        // FIXED: This global function catches data from Google's JSONP wrapper script, avoiding CORS errors
+        // This global callback handles the structured spreadsheet cells safely
         window.drawVisualization = function(data) {
             try {
                 if (!data || !data.table || !data.table.rows) return;
                 
                 data.table.rows.forEach(row => {
-                    if (row && row.c && row.c[0] && row.c[1]) {
-                        const parkName = row.c[0].v;
-                        const parkHours = row.c[1].v;
-                        const targetId = mapping[parkName];
+                    if (row && row.c && Array.isArray(row.c)) {
+                        // FIXED: Replaced brittle array references with a map iterator to bypass formatting conflicts
+                        const cellValues = row.c.map(cell => cell && cell.v !== null ? cell.v : "");
                         
-                        if (targetId && parkHours) {
-                            document.getElementById(targetId).innerText = parkHours;
+                        if (cellValues.length >= 2) {
+                            const parkName = cellValues.shift();
+                            const parkHours = cellValues.shift();
+                            const targetId = mapping[parkName];
+                            
+                            if (targetId && parkHours) {
+                                document.getElementById(targetId).innerText = parkHours;
+                            }
                         }
                     }
                 });
             } catch (err) {
-                console.error("Parsing error: ", err);
+                console.error("Mapping error: ", err);
             }
         };
 
         function refreshData() {
-            // Remove old script tag if it exists to clean up memory
             const oldScript = document.getElementById('google-sheet-script');
             if (oldScript) oldScript.remove();
 
-            // FIXED: Appending a JSONP script request node bypasses CORS restrictions entirely
+            // Native JSONP injection that communicates directly with Google's servers
             const script = document.createElement('script');
             script.id = 'google-sheet-script';
             script.src = "https://google.com" + new Date().getTime();
             document.body.appendChild(script);
         }
 
-        // Initialize script download immediately
         refreshData();
-        // Check for calendar cell modifications every 10 minutes
-        setInterval(refreshData, 600000);
+        setInterval(refreshData, 600000); // Check updates every 10 mins
     </script>
 </body>
 </html>
