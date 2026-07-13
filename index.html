@@ -42,17 +42,16 @@
     <div id="epic-universe" class="hours-box">Loading...</div>
 
     <script>
-        // FIXED: Hardcoded your correct spreadsheet string and appended the mandatory CSV parameter
-        const rawSheetUrl = "https://google.com";
-        const sheetCSVUrl = "https://corsproxy.io?" + encodeURIComponent(rawSheetUrl);
+        // Formulate the CSV stream URL using your custom Sheet ID string
+        const sheetCSVUrl = "https://google.com";
+        const proxyUrl = "https://corsproxy.io" + encodeURIComponent(sheetCSVUrl);
 
         async function fetchHours() {
             try {
-                const response = await fetch(sheetCSVUrl);
-                if (!response.ok) throw new Error("Network issue");
-                const csvText = await response.text();
+                const response = await fetch(proxyUrl);
+                if (!response.ok) throw new Error("HTTP connection error: " + response.status);
                 
-                // Break out raw rows and columns cleanly
+                const csvText = await response.text();
                 const lines = csvText.split(/\r?\n/);
                 
                 const mapping = {
@@ -65,28 +64,40 @@
                     "Epic Universe": "epic-universe"
                 };
 
+                let successfullyParsed = false;
+
                 lines.forEach(line => {
-                    // Safe regex to extract row arrays cleanly without breaking on quotes
-                    const columns = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/"/g, '').trim());
+                    // Split row elements by commas and drop surrounding quote marks
+                    const columns = line.split(",").map(c => c.replace(/"/g, '').trim());
                     
                     if (columns.length >= 2) {
-                        const parkName = columns[0];  // Column A
-                        const parkHours = columns[1]; // Column B
+                        // FIXED: Uses structural array destructuring to assign row text safely
+                        const [parkName, parkHours] = columns;
                         const elementId = mapping[parkName];
                         
                         if (elementId && parkHours) {
                             document.getElementById(elementId).innerText = parkHours;
+                            successfullyParsed = true;
                         }
                     }
                 });
+
+                if (!successfullyParsed) {
+                    throw new Error("No matching theme park row keys identified in CSV data payload.");
+                }
                 
             } catch (error) {
-                console.error("Error displaying script information:", error);
+                console.error("Pipeline failure:", error);
+                // Displays the real, unedited error string if anything fails
+                const boxes = document.getElementsByClassName("hours-box");
+                for (let box of boxes) {
+                    box.innerText = "Error: " + error.message;
+                }
             }
         }
 
         fetchHours();
-        setInterval(fetchHours, 600000); // Check updates every 10 mins
+        setInterval(fetchHours, 600000); // Poll sheet values every 10 minutes
     </script>
 </body>
 </html>
