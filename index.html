@@ -42,20 +42,18 @@
     <div id="epic-universe" class="hours-box">Loading...</div>
 
     <script>
-        // Directly target your spreadsheet ID to draw data layout components safely
-        const googleQueryUrl = "https://google.com";
+        // Directly utilizing your specific live published CSV data stream
+        const sheetCSVUrl = "https://google.com";
 
         async function fetchHours() {
             try {
-                const response = await fetch(googleQueryUrl);
-                const text = await response.text();
+                // Fetch the CSV directly from Google Docs
+                const response = await fetch(sheetCSVUrl);
+                const csvText = await response.text();
                 
-                // Clean the google API junk code text wrappers
-                const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
-                const json = JSON.parse(jsonString);
-                const rows = json.table.rows;
-
-                // Dict mapping for matching string tags
+                // Parse rows by splitting them on line breaks
+                const lines = csvText.split(/\r?\n/);
+                
                 const mapping = {
                     "Magic Kingdom": "magic-kingdom",
                     "Epcot": "epcot",
@@ -66,25 +64,29 @@
                     "Epic Universe": "epic-universe"
                 };
 
-                rows.forEach(row => {
-                    // FIXED: Hardened lookups targeting Google's internal array object structure (.c and .v parameters)
-                    if (row && row.c && row.c[0] && row.c[1]) {
-                        const parkName = row.c[0].v;
-                        const parkHours = row.c[1].v;
+                lines.forEach(line => {
+                    // Split columns by comma
+                    const columns = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/"/g, '').trim());
+                    
+                    if (columns.length >= 2) {
+                        const parkName = columns[0];  // Column A: Park Name
+                        const parkHours = columns[1]; // Column B: Hours
                         const elementId = mapping[parkName];
+                        
                         if (elementId) {
+                            // Output exactly what is in your sheet cell
                             document.getElementById(elementId).innerText = parkHours;
                         }
                     }
                 });
                 
             } catch (error) {
-                console.error("Error reading data table layers:", error);
+                console.error("Error loading CSV layer:", error);
             }
         }
 
         fetchHours();
-        setInterval(fetchHours, 600000);
+        setInterval(fetchHours, 600000); // Check updates every 10 mins
     </script>
 </body>
 </html>
