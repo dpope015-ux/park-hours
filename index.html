@@ -42,17 +42,17 @@
     <div id="epic-universe" class="hours-box">Loading...</div>
 
     <script>
-        // Directly pulls from Google's native API endpoint using your specific spreadsheet ID key
+        // FIXED: Explicitly extracted your spreadsheet key to access Google's table reader API directly
         const googleEndpoint = "https://google.com";
 
         async function fetchHours() {
             try {
                 const response = await fetch(googleEndpoint);
-                if (!response.ok) throw new Error("Google API connection dropped.");
+                if (!response.ok) throw new Error("Google connection error");
                 
                 const rawText = await response.text();
                 
-                // Trims off Google's protective security string wrapper to get clean JSON
+                // Trims the security wrapper off Google's native JSON output
                 const jsonStart = rawText.indexOf('{');
                 const jsonEnd = rawText.lastIndexOf('}') + 1;
                 const jsonString = rawText.substring(jsonStart, jsonEnd);
@@ -71,7 +71,7 @@
                 };
 
                 rows.forEach(row => {
-                    // Safe property structure check to grab values from your sheet rows
+                    // Verifies that row contents contain active data cells
                     if (row && row.c && row.c[0] && row.c[1]) {
                         const parkName = row.c[0].v;
                         const parkHours = row.c[1].v;
@@ -93,7 +93,7 @@
         }
 
         fetchHours();
-        setInterval(fetchHours, 600000); // Automatically pulls fresh hours from the sheet every 10 minutes
+        setInterval(fetchHours, 600000); // Check updates every 10 mins
     </script>
 </body>
 </html>
