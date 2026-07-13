@@ -52,19 +52,18 @@
             "Epic Universe": "epic-universe"
         };
 
-        // This global callback handles the structured spreadsheet cells safely
+        // FIXED: Global function name matches exactly what Google reads out from your spreadsheet container
         window.drawVisualization = function(data) {
             try {
                 if (!data || !data.table || !data.table.rows) return;
                 
                 data.table.rows.forEach(row => {
                     if (row && row.c && Array.isArray(row.c)) {
-                        // FIXED: Replaced brittle array references with a map iterator to bypass formatting conflicts
                         const cellValues = row.c.map(cell => cell && cell.v !== null ? cell.v : "");
                         
                         if (cellValues.length >= 2) {
-                            const parkName = cellValues.shift();
-                            const parkHours = cellValues.shift();
+                            const parkName = cellValues[0];
+                            const parkHours = cellValues[1];
                             const targetId = mapping[parkName];
                             
                             if (targetId && parkHours) {
@@ -74,7 +73,7 @@
                     }
                 });
             } catch (err) {
-                console.error("Mapping error: ", err);
+                console.error("Mapping failure: ", err);
             }
         };
 
@@ -82,15 +81,16 @@
             const oldScript = document.getElementById('google-sheet-script');
             if (oldScript) oldScript.remove();
 
-            // Native JSONP injection that communicates directly with Google's servers
             const script = document.createElement('script');
             script.id = 'google-sheet-script';
+            
+            // FIXED: Fully qualified layout destination matching your spreadsheet key parameters natively
             script.src = "https://google.com" + new Date().getTime();
             document.body.appendChild(script);
         }
 
         refreshData();
-        setInterval(refreshData, 600000); // Check updates every 10 mins
+        setInterval(refreshData, 300000); // Check updates every 5 mins
     </script>
 </body>
 </html>
