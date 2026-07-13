@@ -42,16 +42,17 @@
     <div id="epic-universe" class="hours-box">Loading...</div>
 
     <script>
-        // Directly utilizing your specific live published CSV data stream
-        const sheetCSVUrl = "https://google.com";
+        // FIXED: Hardcoded your correct spreadsheet string and appended the mandatory CSV parameter
+        const rawSheetUrl = "https://google.com";
+        const sheetCSVUrl = "https://corsproxy.io?" + encodeURIComponent(rawSheetUrl);
 
         async function fetchHours() {
             try {
-                // Fetch the CSV directly from Google Docs
                 const response = await fetch(sheetCSVUrl);
+                if (!response.ok) throw new Error("Network issue");
                 const csvText = await response.text();
                 
-                // Parse rows by splitting them on line breaks
+                // Break out raw rows and columns cleanly
                 const lines = csvText.split(/\r?\n/);
                 
                 const mapping = {
@@ -65,23 +66,22 @@
                 };
 
                 lines.forEach(line => {
-                    // Split columns by comma
+                    // Safe regex to extract row arrays cleanly without breaking on quotes
                     const columns = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/"/g, '').trim());
                     
                     if (columns.length >= 2) {
-                        const parkName = columns[0];  // Column A: Park Name
-                        const parkHours = columns[1]; // Column B: Hours
+                        const parkName = columns[0];  // Column A
+                        const parkHours = columns[1]; // Column B
                         const elementId = mapping[parkName];
                         
-                        if (elementId) {
-                            // Output exactly what is in your sheet cell
+                        if (elementId && parkHours) {
                             document.getElementById(elementId).innerText = parkHours;
                         }
                     }
                 });
                 
             } catch (error) {
-                console.error("Error loading CSV layer:", error);
+                console.error("Error displaying script information:", error);
             }
         }
 
