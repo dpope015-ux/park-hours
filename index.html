@@ -31,6 +31,8 @@
         #islands-adventure{ top: 450px; left: 800px; }
         #epic-universe   { top: 750px; left: 450px; }
     </style>
+    <!-- Loads PapaParse directly to read your sheet columns without array bugs -->
+    <script src="https://cloudflare.com"></script>
 </head>
 <body>
     <div id="magic-kingdom" class="hours-box">Loading...</div>
@@ -42,56 +44,47 @@
     <div id="epic-universe" class="hours-box">Loading...</div>
 
     <script>
-        // Directly pointing to your verified public Google CSV engine URL
         const sheetCSVUrl = "https://google.com";
 
-        async function fetchHours() {
-            try {
-                // Fetch the CSV directly from Google Docs securely
-                const response = await fetch(sheetCSVUrl);
-                if (!response.ok) throw new Error("Google spreadsheet stream offline.");
-                
-                const csvText = await response.text();
-                const lines = csvText.split(/\r?\n/);
-                
-                const mapping = {
-                    "Magic Kingdom": "magic-kingdom",
-                    "Epcot": "epcot",
-                    "Hollywood Studios": "hollywood",
-                    "Animal Kingdom": "animal-kingdom",
-                    "Universal Studios Florida": "universal-studios",
-                    "Islands of Adventure": "islands-adventure",
-                    "Epic Universe": "epic-universe"
-                };
+        const mapping = {
+            "Magic Kingdom": "magic-kingdom",
+            "Epcot": "epcot",
+            "Hollywood Studios": "hollywood",
+            "Animal Kingdom": "animal-kingdom",
+            "Universal Studios Florida": "universal-studios",
+            "Islands of Adventure": "islands-adventure",
+            "Epic Universe": "epic-universe"
+        };
 
-                lines.forEach(line => {
-                    const columns = line.split(",").map(c => c.replace(/"/g, '').trim());
+        function fetchHours() {
+            // Uses PapaParse to download your public spreadsheet matrix cleanly
+            Papa.parse(sheetCSVUrl, {
+                download: true,
+                header: false,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    if (!results || !results.data) return;
                     
-                    if (columns.length >= 2) {
-                        // FIXED: Using .at() to safely index arrays without triggering formatting deletions
-                        const parkName = columns.at(0);  // Column A
-                        const parkHours = columns.at(1); // Column B
-                        const targetId = mapping[parkName];
-                        
-                        if (targetId && parkHours) {
-                            document.getElementById(targetId).innerText = parkHours;
+                    results.data.forEach(row => {
+                        if (row && row.length >= 2) {
+                            const parkName = row.at(0);  // Column A
+                            const parkHours = row.at(1); // Column B
+                            const targetId = mapping[parkName];
+                            
+                            if (targetId && parkHours) {
+                                document.getElementById(targetId).innerText = parkHours;
+                            }
                         }
-                    }
-                });
-                
-            } catch (error) {
-                console.error("Data tracking failure:", error);
-                const boxes = document.getElementsByClassName("hours-box");
-                for (let box of boxes) {
-                    box.innerText = "Error Fetching Data";
+                    });
+                },
+                error: function(error) {
+                    console.error("Data pipeline blocked: ", error);
                 }
-            }
+            });
         }
 
-        // Run browser rendering sequence immediately
         fetchHours();
-        // Check updates automatically every 5 mins
-        setInterval(fetchHours, 300000);
+        setInterval(fetchHours, 300000); // Check updates automatically every 5 mins
     </script>
 </body>
 </html>
