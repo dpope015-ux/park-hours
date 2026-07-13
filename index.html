@@ -42,7 +42,7 @@
     <div id="epic-universe" class="hours-box">Loading...</div>
 
     <script>
-        // FIXED: Switched to Google's native visualization query engine endpoint to bypass CORS blocks entirely
+        // Directly target your spreadsheet ID to draw data layout components safely
         const googleQueryUrl = "https://google.com";
 
         async function fetchHours() {
@@ -50,12 +50,12 @@
                 const response = await fetch(googleQueryUrl);
                 const text = await response.text();
                 
-                // Cleans up the Google API wrapper text to isolate pure JSON objects
+                // Clean the google API junk code text wrappers
                 const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
                 const json = JSON.parse(jsonString);
                 const rows = json.table.rows;
 
-                // Safe parsing dictionary mapping the spreadsheet cells to your HTML screen IDs
+                // Dict mapping for matching string tags
                 const mapping = {
                     "Magic Kingdom": "magic-kingdom",
                     "Epcot": "epcot",
@@ -67,23 +67,24 @@
                 };
 
                 rows.forEach(row => {
-                    if (row.c && row.c[0] && row.c[1]) {
+                    // FIXED: Hardened lookups targeting Google's internal array object structure (.c and .v parameters)
+                    if (row && row.c && row.c[0] && row.c[1]) {
                         const parkName = row.c[0].v;
                         const parkHours = row.c[1].v;
                         const elementId = mapping[parkName];
                         if (elementId) {
-                            document.getElementById(elementId).innerText = parkHours ? parkHours : "Closed";
+                            document.getElementById(elementId).innerText = parkHours;
                         }
                     }
                 });
                 
             } catch (error) {
-                console.error("Error fetching rows from layout matrix:", error);
+                console.error("Error reading data table layers:", error);
             }
         }
 
         fetchHours();
-        setInterval(fetchHours, 600000); // Refreshes text parameters automatically every 10 minutes
+        setInterval(fetchHours, 600000);
     </script>
 </body>
 </html>
