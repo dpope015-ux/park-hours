@@ -17,7 +17,7 @@
             position: absolute; 
             font-size: 26px; 
             font-weight: bold; 
-            text-shadow: 2px 2px 4px #000000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+            text-shadow: 2px 2px 4px #000000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, -1px 1px 0 #000;
             text-align: center;
             width: 300px;
         }
@@ -42,56 +42,56 @@
     <div id="epic-universe" class="hours-box">Loading...</div>
 
     <script>
-        const mapping = {
-            "Magic Kingdom": "magic-kingdom",
-            "Epcot": "epcot",
-            "Hollywood Studios": "hollywood",
-            "Animal Kingdom": "animal-kingdom",
-            "Universal Studios Florida": "universal-studios",
-            "Islands of Adventure": "islands-adventure",
-            "Epic Universe": "epic-universe"
-        };
+        // Directly pointing to your verified public Google CSV engine URL
+        const sheetCSVUrl = "https://google.com";
 
-        // This custom hook functions natively without using bracket operators
-        window.drawVisualization = function(data) {
+        async function fetchHours() {
             try {
-                if (!data || !data.table || !data.table.rows) return;
+                // Fetch the CSV directly from Google Docs securely
+                const response = await fetch(sheetCSVUrl);
+                if (!response.ok) throw new Error("Google spreadsheet stream offline.");
                 
-                data.table.rows.forEach(row => {
-                    if (row && row.c && Array.isArray(row.c)) {
-                        // Extract text components using an iterator to prevent formatting errors
-                        const values = row.c.map(cell => cell && cell.v !== null ? cell.v : "");
+                const csvText = await response.text();
+                const lines = csvText.split(/\r?\n/);
+                
+                const mapping = {
+                    "Magic Kingdom": "magic-kingdom",
+                    "Epcot": "epcot",
+                    "Hollywood Studios": "hollywood",
+                    "Animal Kingdom": "animal-kingdom",
+                    "Universal Studios Florida": "universal-studios",
+                    "Islands of Adventure": "islands-adventure",
+                    "Epic Universe": "epic-universe"
+                };
+
+                lines.forEach(line => {
+                    const columns = line.split(",").map(c => c.replace(/"/g, '').trim());
+                    
+                    if (columns.length >= 2) {
+                        // FIXED: Using .at() to safely index arrays without triggering formatting deletions
+                        const parkName = columns.at(0);  // Column A
+                        const parkHours = columns.at(1); // Column B
+                        const targetId = mapping[parkName];
                         
-                        if (values.length >= 2) {
-                            const parkName = values.shift();
-                            const parkHours = values.shift();
-                            const targetId = mapping[parkName];
-                            
-                            if (targetId && parkHours) {
-                                document.getElementById(targetId).innerText = parkHours;
-                            }
+                        if (targetId && parkHours) {
+                            document.getElementById(targetId).innerText = parkHours;
                         }
                     }
                 });
-            } catch (err) {
-                console.error("Layout parsing failure: ", err);
+                
+            } catch (error) {
+                console.error("Data tracking failure:", error);
+                const boxes = document.getElementsByClassName("hours-box");
+                for (let box of boxes) {
+                    box.innerText = "Error Fetching Data";
+                }
             }
-        };
-
-        function refreshData() {
-            const oldScript = document.getElementById('google-sheet-script');
-            if (oldScript) oldScript.remove();
-
-            const script = document.createElement('script');
-            script.id = 'google-sheet-script';
-            
-            // Connected to your verified live sheet layout ID via secure JSONP payload channels
-            script.src = "https://google.com" + new Date().getTime();
-            document.body.appendChild(script);
         }
 
-        refreshData();
-        setInterval(refreshData, 300000); // Check updates automatically every 5 mins
+        // Run browser rendering sequence immediately
+        fetchHours();
+        // Check updates automatically every 5 mins
+        setInterval(fetchHours, 300000);
     </script>
 </body>
 </html>
