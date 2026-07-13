@@ -43,37 +43,40 @@
     <div id="islands-adventure" class="hours-box">Loading...</div>
     <div id="epic-universe" class="hours-box">Loading...</div>
 
-    <script>
+        <script>
         // Your live public Google Sheet CSV URL
-        const sheetCSVUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSswDsoar01OmnG6tTKYAcp_2kZiARfxotIAhY2cjJwaEUHmRBJeBkgtPYsWbFXpu45SWHIAi5I0C5Y/pub?output=csv";
+        const rawSheetUrl = "https://google.com";
+        
+        // Bypasses CORS browser blocks using a free public proxy aggregator
+        const sheetCSVUrl = "https://corsproxy.io?" + encodeURIComponent(rawSheetUrl);
 
         async function fetchHours() {
             try {
                 const response = await fetch(sheetCSVUrl);
                 const csvText = await response.text();
                 
-                // Split by rows, then split columns by comma
+                // Split lines, then isolate individual cells by comma divisions
                 const rows = csvText.split("\n").map(row => {
                     return row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(cell => cell.replace(/"/g, '').trim());
                 });
                 
-                // rows[X][1] targets Column B (Hours) for each specific row index
-                if (rows[1]) document.getElementById("magic-kingdom").innerText = rows[1][1] || "Closed";
-                if (rows[2]) document.getElementById("epcot").innerText = rows[2][1] || "Closed";
-                if (rows[3]) document.getElementById("hollywood").innerText = rows[3][1] || "Closed";
-                if (rows[4]) document.getElementById("animal-kingdom").innerText = rows[4][1] || "Closed";
-                if (rows[5]) document.getElementById("universal-studios").innerText = rows[5][1] || "Closed";
-                if (rows[6]) document.getElementById("islands-adventure").innerText = rows[6][1] || "Closed";
-                if (rows[7]) document.getElementById("epic-universe").innerText = rows[7][1] || "Closed";
+                // Pull values directly from row indices [1] to [7] (Column B)
+                if (rows && rows[1]) document.getElementById("magic-kingdom").innerText = rows[1][1] || "Closed";
+                if (rows && rows[2]) document.getElementById("epcot").innerText = rows[2][1] || "Closed";
+                if (rows && rows[3]) document.getElementById("hollywood").innerText = rows[3][1] || "Closed";
+                if (rows && rows[4]) document.getElementById("animal-kingdom").innerText = rows[4][1] || "Closed";
+                if (rows && rows[5]) document.getElementById("universal-studios").innerText = rows[5][1] || "Closed";
+                if (rows && rows[6]) document.getElementById("islands-adventure").innerText = rows[6][1] || "Closed";
+                if (rows && rows[7]) document.getElementById("epic-universe").innerText = rows[7][1] || "Closed";
                 
             } catch (error) {
                 console.error("Error updating web interface:", error);
             }
         }
 
-        // Fetch data immediately upon browser initialization
+        // Run data pipeline instantly on scene mount
         fetchHours();
-        // Check for updates automatically every 10 minutes to stay fresh
+        // Quietly updates background context matrix layers every 10 minutes
         setInterval(fetchHours, 600000);
     </script>
 </body>
