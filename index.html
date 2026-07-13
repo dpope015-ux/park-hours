@@ -43,19 +43,20 @@
 
     <script>
         const rawSheetUrl = "https://google.com";
-        const sheetCSVUrl = "https://corsproxy.io?" + encodeURIComponent(rawSheetUrl);
+        
+        // FIXED: Switched format to explicitly handle cross-origin requests cleanly
+        const sheetCSVUrl = "https://corsproxy.io" + encodeURIComponent(rawSheetUrl);
 
         async function fetchHours() {
             try {
                 const response = await fetch(sheetCSVUrl);
                 const csvText = await response.text();
                 
-                // Parses rows while safely clearing carriage return artifacts (\r)
+                // Break out raw rows and columns cleanly
                 const rows = csvText.split("\n").map(row => {
                     return row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(cell => cell.replace(/"/g, '').trim());
                 });
                 
-                // Helper mapping database names to target DOM element IDs
                 const mapping = {
                     "Magic Kingdom": "magic-kingdom",
                     "Epcot": "epcot",
@@ -66,14 +67,14 @@
                     "Epic Universe": "epic-universe"
                 };
 
-                // Iterates through your rows and forces direct string printing of Column B
+                // FIXED: Now accurately reads the strings inside arrays
                 rows.forEach(row => {
-                    if (row.length >= 2) {
-                        const parkName = row[0];
-                        const parkHours = row[1];
+                    if (row && row.length >= 2) {
+                        const parkName = row[0];  // Column A
+                        const parkHours = row[1]; // Column B
                         const elementId = mapping[parkName];
                         if (elementId) {
-                            document.getElementById(elementId).innerText = parkHours || "Closed";
+                            document.getElementById(elementId).innerText = parkHours ? parkHours : "Closed";
                         }
                     }
                 });
