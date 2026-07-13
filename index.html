@@ -42,23 +42,16 @@
     <div id="epic-universe" class="hours-box">Loading...</div>
 
     <script>
-        // FIXED: Explicitly extracted your spreadsheet key to access Google's table reader API directly
-        const googleEndpoint = "https://google.com";
+        const sheetCSVUrl = "https://google.com";
 
         async function fetchHours() {
             try {
-                const response = await fetch(googleEndpoint);
-                if (!response.ok) throw new Error("Google connection error");
+                // Direct fetch with no proxies needed now that Share settings are open
+                const response = await fetch(sheetCSVUrl);
+                if (!response.ok) throw new Error("Could not pull spreadsheet details.");
                 
-                const rawText = await response.text();
-                
-                // Trims the security wrapper off Google's native JSON output
-                const jsonStart = rawText.indexOf('{');
-                const jsonEnd = rawText.lastIndexOf('}') + 1;
-                const jsonString = rawText.substring(jsonStart, jsonEnd);
-                
-                const data = JSON.parse(jsonString);
-                const rows = data.table.rows;
+                const csvText = await response.text();
+                const lines = csvText.split(/\r?\n/);
                 
                 const mapping = {
                     "Magic Kingdom": "magic-kingdom",
@@ -70,11 +63,12 @@
                     "Epic Universe": "epic-universe"
                 };
 
-                rows.forEach(row => {
-                    // Verifies that row contents contain active data cells
-                    if (row && row.c && row.c[0] && row.c[1]) {
-                        const parkName = row.c[0].v;
-                        const parkHours = row.c[1].v;
+                lines.forEach(line => {
+                    const columns = line.split(",").map(c => c.replace(/"/g, '').trim());
+                    
+                    if (columns.length >= 2) {
+                        const parkName = columns[0];  // Column A
+                        const parkHours = columns[1]; // Column B
                         const targetId = mapping[parkName];
                         
                         if (targetId && parkHours) {
@@ -84,10 +78,10 @@
                 });
                 
             } catch (error) {
-                console.error("Data pipeline broken:", error);
+                console.error("Data error:", error);
                 const boxes = document.getElementsByClassName("hours-box");
                 for (let box of boxes) {
-                    box.innerText = "Error: " + error.message;
+                    box.innerText = "Connection Error";
                 }
             }
         }
