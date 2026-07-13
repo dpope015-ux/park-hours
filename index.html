@@ -42,14 +42,15 @@
     <div id="epic-universe" class="hours-box">Loading...</div>
 
     <script>
-        // Formulate the CSV stream URL using your custom Sheet ID string
         const sheetCSVUrl = "https://google.com";
-        const proxyUrl = "https://corsproxy.io" + encodeURIComponent(sheetCSVUrl);
+        
+        // FIXED: Switched to killcors.com proxy to allow free live usage on GitHub Pages without API blocks
+        const proxyUrl = "https://proxy.killcors.com/?url=" + encodeURIComponent(sheetCSVUrl);
 
         async function fetchHours() {
             try {
                 const response = await fetch(proxyUrl);
-                if (!response.ok) throw new Error("HTTP connection error: " + response.status);
+                if (!response.ok) throw new Error("Proxy connection issue");
                 
                 const csvText = await response.text();
                 const lines = csvText.split(/\r?\n/);
@@ -64,40 +65,35 @@
                     "Epic Universe": "epic-universe"
                 };
 
-                let successfullyParsed = false;
+                let parsedAny = false;
 
                 lines.forEach(line => {
-                    // Split row elements by commas and drop surrounding quote marks
                     const columns = line.split(",").map(c => c.replace(/"/g, '').trim());
-                    
                     if (columns.length >= 2) {
-                        // FIXED: Uses structural array destructuring to assign row text safely
-                        const [parkName, parkHours] = columns;
+                        const parkName = columns[0];
+                        const parkHours = columns[1];
                         const elementId = mapping[parkName];
                         
                         if (elementId && parkHours) {
                             document.getElementById(elementId).innerText = parkHours;
-                            successfullyParsed = true;
+                            parsedAny = true;
                         }
                     }
                 });
 
-                if (!successfullyParsed) {
-                    throw new Error("No matching theme park row keys identified in CSV data payload.");
-                }
+                if (!parsedAny) throw new Error("Could not find matching park text rows");
                 
             } catch (error) {
                 console.error("Pipeline failure:", error);
-                // Displays the real, unedited error string if anything fails
                 const boxes = document.getElementsByClassName("hours-box");
                 for (let box of boxes) {
-                    box.innerText = "Error: " + error.message;
+                    box.innerText = "Error Loading Hours";
                 }
             }
         }
 
         fetchHours();
-        setInterval(fetchHours, 600000); // Poll sheet values every 10 minutes
+        setInterval(fetchHours, 600000); // Auto-refresh data every 10 minutes
     </script>
 </body>
 </html>
