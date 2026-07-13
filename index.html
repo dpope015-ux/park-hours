@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Theme Park Live Overlay</title>
+    <style>
+        body { 
+            background: transparent; 
+            margin: 0; 
+            font-family: 'Arial', sans-serif; 
+            color: white; 
+            overflow: hidden; 
+            width: 1920px;
+            height: 1080px;
+        }
+        .hours-box { 
+            position: absolute; 
+            font-size: 26px; 
+            font-weight: bold; 
+            /* High-contrast text shadows so the text is readable over any video background */
+            text-shadow: 2px 2px 4px #000000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+            text-align: center;
+            width: 300px;
+        }
+        
+        /* CHANGE THESE NUMBERS TO LINE UP THE TEXT PERFECTLY UNDER YOUR PARK GRAPHICS */
+        #magic-kingdom   { top: 150px; left: 100px; }
+        #epcot           { top: 150px; left: 450px; }
+        #hollywood       { top: 150px; left: 800px; }
+        #animal-kingdom  { top: 450px; left: 100px; }
+        #universal-studios{ top: 450px; left: 450px; }
+        #islands-adventure{ top: 450px; left: 800px; }
+        #epic-universe   { top: 750px; left: 450px; }
+    </style>
+</head>
+<body>
+    <!-- The HTML structure matching your Google Sheet row layout -->
+    <div id="magic-kingdom" class="hours-box">Loading...</div>
+    <div id="epcot" class="hours-box">Loading...</div>
+    <div id="hollywood" class="hours-box">Loading...</div>
+    <div id="animal-kingdom" class="hours-box">Loading...</div>
+    <div id="universal-studios" class="hours-box">Loading...</div>
+    <div id="islands-adventure" class="hours-box">Loading...</div>
+    <div id="epic-universe" class="hours-box">Loading...</div>
+
+    <script>
+        // Your live public Google Sheet CSV URL
+        const sheetCSVUrl = "https://google.com";
+
+        async function fetchHours() {
+            try {
+                const response = await fetch(sheetCSVUrl);
+                const csvText = await response.text();
+                
+                // Split by rows, then split columns by comma
+                const rows = csvText.split("\n").map(row => {
+                    return row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(cell => cell.replace(/"/g, '').trim());
+                });
+                
+                // rows[X][1] targets Column B (Hours) for each specific row index
+                if (rows[1]) document.getElementById("magic-kingdom").innerText = rows[1][1] || "Closed";
+                if (rows[2]) document.getElementById("epcot").innerText = rows[2][1] || "Closed";
+                if (rows[3]) document.getElementById("hollywood").innerText = rows[3][1] || "Closed";
+                if (rows[4]) document.getElementById("animal-kingdom").innerText = rows[4][1] || "Closed";
+                if (rows[5]) document.getElementById("universal-studios").innerText = rows[5][1] || "Closed";
+                if (rows[6]) document.getElementById("islands-adventure").innerText = rows[6][1] || "Closed";
+                if (rows[7]) document.getElementById("epic-universe").innerText = rows[7][1] || "Closed";
+                
+            } catch (error) {
+                console.error("Error updating web interface:", error);
+            }
+        }
+
+        // Fetch data immediately upon browser initialization
+        fetchHours();
+        // Check for updates automatically every 10 minutes to stay fresh
+        setInterval(fetchHours, 600000);
+    </script>
+</body>
+</html>
