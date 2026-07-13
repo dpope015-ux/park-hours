@@ -42,18 +42,23 @@
     <div id="epic-universe" class="hours-box">Loading...</div>
 
     <script>
-        const sheetCSVUrl = "https://google.com";
-        
-        // FIXED: Switched to killcors.com proxy to allow free live usage on GitHub Pages without API blocks
-        const proxyUrl = "https://proxy.killcors.com/?url=" + encodeURIComponent(sheetCSVUrl);
+        // Directly pulls from Google's native API endpoint using your specific spreadsheet ID key
+        const googleEndpoint = "https://google.com";
 
         async function fetchHours() {
             try {
-                const response = await fetch(proxyUrl);
-                if (!response.ok) throw new Error("Proxy connection issue");
+                const response = await fetch(googleEndpoint);
+                if (!response.ok) throw new Error("Google API connection dropped.");
                 
-                const csvText = await response.text();
-                const lines = csvText.split(/\r?\n/);
+                const rawText = await response.text();
+                
+                // Trims off Google's protective security string wrapper to get clean JSON
+                const jsonStart = rawText.indexOf('{');
+                const jsonEnd = rawText.lastIndexOf('}') + 1;
+                const jsonString = rawText.substring(jsonStart, jsonEnd);
+                
+                const data = JSON.parse(jsonString);
+                const rows = data.table.rows;
                 
                 const mapping = {
                     "Magic Kingdom": "magic-kingdom",
@@ -65,35 +70,30 @@
                     "Epic Universe": "epic-universe"
                 };
 
-                let parsedAny = false;
-
-                lines.forEach(line => {
-                    const columns = line.split(",").map(c => c.replace(/"/g, '').trim());
-                    if (columns.length >= 2) {
-                        const parkName = columns[0];
-                        const parkHours = columns[1];
-                        const elementId = mapping[parkName];
+                rows.forEach(row => {
+                    // Safe property structure check to grab values from your sheet rows
+                    if (row && row.c && row.c[0] && row.c[1]) {
+                        const parkName = row.c[0].v;
+                        const parkHours = row.c[1].v;
+                        const targetId = mapping[parkName];
                         
-                        if (elementId && parkHours) {
-                            document.getElementById(elementId).innerText = parkHours;
-                            parsedAny = true;
+                        if (targetId && parkHours) {
+                            document.getElementById(targetId).innerText = parkHours;
                         }
                     }
                 });
-
-                if (!parsedAny) throw new Error("Could not find matching park text rows");
                 
             } catch (error) {
-                console.error("Pipeline failure:", error);
+                console.error("Data pipeline broken:", error);
                 const boxes = document.getElementsByClassName("hours-box");
                 for (let box of boxes) {
-                    box.innerText = "Error Loading Hours";
+                    box.innerText = "Error: " + error.message;
                 }
             }
         }
 
         fetchHours();
-        setInterval(fetchHours, 600000); // Auto-refresh data every 10 minutes
+        setInterval(fetchHours, 600000); // Automatically pulls fresh hours from the sheet every 10 minutes
     </script>
 </body>
 </html>
