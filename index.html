@@ -42,21 +42,20 @@
     <div id="epic-universe" class="hours-box">Loading...</div>
 
     <script>
-        const rawSheetUrl = "https://google.com";
-        
-        // FIXED: Switched format to explicitly handle cross-origin requests cleanly
-        const sheetCSVUrl = "https://corsproxy.io" + encodeURIComponent(rawSheetUrl);
+        // FIXED: Switched to Google's native visualization query engine endpoint to bypass CORS blocks entirely
+        const googleQueryUrl = "https://google.com";
 
         async function fetchHours() {
             try {
-                const response = await fetch(sheetCSVUrl);
-                const csvText = await response.text();
+                const response = await fetch(googleQueryUrl);
+                const text = await response.text();
                 
-                // Break out raw rows and columns cleanly
-                const rows = csvText.split("\n").map(row => {
-                    return row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(cell => cell.replace(/"/g, '').trim());
-                });
-                
+                // Cleans up the Google API wrapper text to isolate pure JSON objects
+                const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+                const json = JSON.parse(jsonString);
+                const rows = json.table.rows;
+
+                // Safe parsing dictionary mapping the spreadsheet cells to your HTML screen IDs
                 const mapping = {
                     "Magic Kingdom": "magic-kingdom",
                     "Epcot": "epcot",
@@ -67,11 +66,10 @@
                     "Epic Universe": "epic-universe"
                 };
 
-                // FIXED: Now accurately reads the strings inside arrays
                 rows.forEach(row => {
-                    if (row && row.length >= 2) {
-                        const parkName = row[0];  // Column A
-                        const parkHours = row[1]; // Column B
+                    if (row.c && row.c[0] && row.c[1]) {
+                        const parkName = row.c[0].v;
+                        const parkHours = row.c[1].v;
                         const elementId = mapping[parkName];
                         if (elementId) {
                             document.getElementById(elementId).innerText = parkHours ? parkHours : "Closed";
@@ -80,12 +78,12 @@
                 });
                 
             } catch (error) {
-                console.error("Error updating layout overlay:", error);
+                console.error("Error fetching rows from layout matrix:", error);
             }
         }
 
         fetchHours();
-        setInterval(fetchHours, 600000);
+        setInterval(fetchHours, 600000); // Refreshes text parameters automatically every 10 minutes
     </script>
 </body>
 </html>
